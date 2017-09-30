@@ -2,7 +2,7 @@ package org.komamitsu.tinylisp
 
 import java.io.InputStream
 
-class Interpreter() {
+class Interpreter {
     private val eval = Eval()
     private val env = eval.getWorld()
 

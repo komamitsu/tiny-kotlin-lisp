@@ -30,45 +30,51 @@ class Parser(val input: InputStream) {
             }
             "(" -> parseCell()
             ")" -> throw IllegalStateException("Unexpected token: [$token]")
-            "=" -> Symbol(token)
-            "/=" -> Symbol(token)
-            "<" -> Symbol(token)
-            "<=" -> Symbol(token)
-            ">" -> Symbol(token)
-            ">=" -> Symbol(token)
-            "+" -> Symbol(token)
-            "-" -> Symbol(token)
-            "*" -> Symbol(token)
-            "/" -> Symbol(token)
-            "t" -> True
+            "t" -> TrueNode
             else -> {
                 val first = token[0]
-                if (first.isDigit() || first == '+' || first == '-')
-                    Integer(token.toLong())
+                if (first.isDigit() || ((first == '+' || first == '-') && token.length > 1 && token[1].isDigit()))
+                    IntegerNode(token.toLong())
                 else
-                    Symbol(token)
+                    SymbolNode(token)
             }
         }
     }
 
     private fun parseCell() : Node {
         val token = nextToken()
-        if (token == ")")
-            return Nil
-
-        if (token == ".") {
-            // The next should be a cdr
-            val cdr = parseWithoutToken()
-            val token = nextToken()
-            if (token != ")")
-                throw IllegalStateException("Unexpected token: [$token]")
-
-            return cdr
+        return when (token) {
+            ")" -> NilNode
+            "." -> {
+                // The next should be a cdr
+                val cdr = parseWithoutToken()
+                val nextToken = nextToken()
+                if (nextToken != ")")
+                    throw IllegalStateException("Unexpected token: [$nextToken]")
+                cdr
+            }
+        /*
+        "=" -> EqualNode(asCell(parseCell()))
+        "/=" -> NotEqualNode(asCell(parseCell()))
+        "<" -> LessThanNode(asCell(parseCell()))
+        "<=" -> LessThanOrEqualNode(asCell(parseCell()))
+        ">" -> GreaterThanNode(asCell(parseCell()))
+        ">=" -> GreaterThanOrEqualNode(asCell(parseCell()))
+        "+" -> AddNode(asCell(parseCell()))
+        "-" -> SubtractNode(asCell(parseCell()))
+        "*" -> MultiplyNode(asCell(parseCell()))
+        "/" -> DivideNode(asCell(parseCell()))
+        "if" -> IfNode(asCell(parseCell()))
+        "cdr" -> CarNode(asCell(parseCell()))
+        "cdr" -> CdrOpNode(asCell(parseCell()))
+        "cons" -> ConsOpNode(asCell(parseCell()))
+        */
+            else -> {
+                val car = parseWithToken(token)
+                val cdr = parseCell()
+                CellNode(car, cdr)
+            }
         }
-
-        val car = parseWithToken(token)
-        val cdr = parseCell()
-        return Cell(car, cdr)
     }
 
     private fun readFromStream(): Char {

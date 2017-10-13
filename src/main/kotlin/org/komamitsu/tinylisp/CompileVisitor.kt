@@ -46,7 +46,7 @@ class CompileVisitor : Visitor<Unit> {
 
     private fun declareReturnVar(label: String): String {
         val varName = createNewVarName()
-        sourceCode().append("org.komamitsu.tinylisp.Node $varName = null;\n")
+        sourceCode().append("Node $varName = null;\n")
         pushReturnVarName(varName, label)
         return varName
     }
@@ -78,17 +78,17 @@ class CompileVisitor : Visitor<Unit> {
 
     override fun visitIntegerNode(integerNode: IntegerNode): Unit {
         val returnVarName = popReturnVarName("visitIntegerNode")
-        sourceCode().append("$returnVarName = new org.komamitsu.tinylisp.IntegerNode(${integerNode.value});\n")
+        sourceCode().append("$returnVarName = new IntegerNode(${integerNode.value});\n")
     }
 
     override fun visitBoolNode(boolNode: BoolNode): Unit {
         val returnVarName = popReturnVarName("visitBoolNode")
 
         if (boolNode.bool) {
-            sourceCode().append("$returnVarName = org.komamitsu.tinylisp.TrueNode.INSTANCE;\n")
+            sourceCode().append("$returnVarName = TrueNode.INSTANCE;\n")
         }
         else {
-            sourceCode().append("$returnVarName = org.komamitsu.tinylisp.NilNode.INSTANCE;\n")
+            sourceCode().append("$returnVarName = NilNode.INSTANCE;\n")
         }
     }
 
@@ -145,7 +145,7 @@ class CompileVisitor : Visitor<Unit> {
         }
 
         val returnVarName = popReturnVarName("representQuotedCellNode")
-        sourceCode().append("$returnVarName = new org.komamitsu.tinylisp.CellNode($carVarName, $cdrVarName);")
+        sourceCode().append("$returnVarName = new CellNode($carVarName, $cdrVarName);")
     }
 
     private fun evalAndReturn(node: Node) {
@@ -160,10 +160,10 @@ class CompileVisitor : Visitor<Unit> {
         val returnVarName = popReturnVarName("evalCondAndReturn")
         withBlock {
             sourceCode().append("if ($condStr) {\n")
-            sourceCode().append("  $returnVarName = org.komamitsu.tinylisp.TrueNode.INSTANCE;\n")
+            sourceCode().append("  $returnVarName = TrueNode.INSTANCE;\n")
             sourceCode().append("}\n")
             sourceCode().append("else {\n")
-            sourceCode().append("  $returnVarName = org.komamitsu.tinylisp.NilNode.INSTANCE;\n")
+            sourceCode().append("  $returnVarName = NilNode.INSTANCE;\n")
             sourceCode().append("}\n")
         }
     }
@@ -172,7 +172,7 @@ class CompileVisitor : Visitor<Unit> {
         val vars = declareVars(params)
         val varsWithField = vars.map({ x -> "$x.asIntegerNode().getValue()"})
         val returnVarName = popReturnVarName("evalArithmeticAndReturn")
-        sourceCode().append("$returnVarName = new org.komamitsu.tinylisp.IntegerNode(")
+        sourceCode().append("$returnVarName = new IntegerNode(")
         sourceCode().append(varsWithField.joinToString(separator = " $operator "))
         sourceCode().append(");\n")
     }
@@ -317,14 +317,14 @@ class CompileVisitor : Visitor<Unit> {
 
                 val next = params.cdr.asCellNode()
                 val args = next.car.asCellNode()
-                sourceCode().append("public static org.komamitsu.tinylisp.Node ${funcName.key}(\n")
+                sourceCode().append("public static Node ${funcName.key}(\n")
                 foldLeft<NilNode, Node>(args,
                         { last, x ->
                             sourceCode().append("    ")
                             if (last != null) {
                                 sourceCode().append(", ")
                             }
-                            sourceCode().append("org.komamitsu.tinylisp.Node ${x.asSymbolNode().key}\n")
+                            sourceCode().append("Node ${x.asSymbolNode().key}\n")
                             NilNode
                         })
                 sourceCode().append(")\n")
@@ -381,6 +381,14 @@ class CompileVisitor : Visitor<Unit> {
 
     fun compile() {
         val cbe = CompilerFactoryFactory.getDefaultCompilerFactory().newClassBodyEvaluator()
+        cbe.setClassName("org.komamitsu.tinylisp.Runner")
+        cbe.setDefaultImports(
+                arrayOf("org.komamitsu.tinylisp.Node",
+                        "org.komamitsu.tinylisp.IntegerNode",
+                        "org.komamitsu.tinylisp.BoolNode",
+                        "org.komamitsu.tinylisp.TrueNode",
+                        "org.komamitsu.tinylisp.NilNode",
+                        "org.komamitsu.tinylisp.CellNode"))
         cbe.cook(dumpCode())
         val main = cbe.clazz.getMethod("main", Array<String>::class.java)
         main.invoke(null, arrayOfNulls<String>(0))

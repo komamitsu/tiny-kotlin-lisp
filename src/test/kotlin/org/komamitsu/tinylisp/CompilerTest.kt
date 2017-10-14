@@ -1,98 +1,114 @@
 package org.komamitsu.tinylisp
 
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class CompilerTest {
+    @Rule
+    @JvmField
+    val tempFolder = TemporaryFolder()
+
+    private fun run(lispCode: String, assert: (String) -> Unit) {
+        val outputJarFile = tempFolder.root.toPath().resolve("TestCompiledLisp.jar")
+        val dumpSourceFile = tempFolder.newFile()
+        val compiler = Compiler(outputJarFile, dumpSourceFile.toPath())
+        compiler.process(lispCode.byteInputStream())
+
+        val processBuilder = ProcessBuilder("java", "-jar", outputJarFile.toString())
+        val redirectFile = tempFolder.newFile()
+        assertEquals(0, processBuilder.redirectOutput(redirectFile).start().waitFor())
+
+        val actual = redirectFile.readText().trim()
+        assert(actual)
+    }
+
     @Test
     fun simple() {
-        val compiler = Compiler()
-        compiler.process("(print (+ 35 7))".byteInputStream())
+        run("(print (+ 35 7))", { actual ->
+            assertEquals("42", actual)
+        })
     }
 
     @Test
     fun car() {
-        val compiler = Compiler()
-        compiler.process("(print (car '(42 0)))".byteInputStream())
+        run("(print (car '(42 0)))", { actual ->
+            assertEquals("42", actual)
+        })
     }
 
     @Test
     fun cdr() {
-        val compiler = Compiler()
-        compiler.process("(print (cdr '(42 0)))".byteInputStream())
+        run("(print (cdr '(42 0)))", { actual ->
+            assertEquals("(0, NIL)", actual)
+        })
     }
 
     @Test
     fun cons() {
-        run {
-            val compiler = Compiler()
-            compiler.process("(print (cons 1 2))".byteInputStream())
-        }
+        run("(print (cons 1 2))", { actual ->
+            assertEquals("(1, 2)", actual)
+        })
 
-        run {
-            val compiler = Compiler()
-            compiler.process("(print (cons '(1 2) '(3 4)))".byteInputStream())
-        }
+        run("(print (cons '(1 2) '(3 4)))", { actual ->
+            assertEquals("((1, (2, NIL)), (3, (4, NIL)))", actual)
+        })
     }
 
     @Test
     fun equals() {
-        run {
-            val compiler = Compiler()
-            compiler.process("(print (= 1 1))".byteInputStream())
-        }
+        run("(print (= 1 1))", { actual ->
+            assertEquals("T", actual)
+        })
 
-        run {
-            val compiler = Compiler()
-            compiler.process("(print (= 1 2))".byteInputStream())
-        }
+        run("(print (= 1 2))", { actual ->
+            assertEquals("NIL", actual)
+        })
 
-        run {
-            val compiler = Compiler()
-            compiler.process("(= (+ 35 7) (* 6 7))".byteInputStream())
-        }
+        run("(print (= (+ 35 7) (* 6 7)))", { actual ->
+            assertEquals("T", actual)
+        })
     }
 
     @Test
     fun simpleIf() {
-        run {
-            val compiler = Compiler()
-            compiler.process("(print (if (= 1 1) 42 0))".byteInputStream())
-        }
+        run("(print (if (= 1 1) 42 0))", { actual ->
+            assertEquals("42", actual)
+        })
 
-        run {
-            val compiler = Compiler()
-            compiler.process("(print (if (= 1 2) 42 0))".byteInputStream())
-        }
+        run("(print (if (= 1 2) 42 0))", { actual ->
+            assertEquals("0", actual)
+        })
 
-        run {
-            val compiler = Compiler()
-            compiler.process("(print (if (= 1 2) 42))".byteInputStream())
-        }
+        run("(print (if (= 1 2) 42))", { actual ->
+            assertEquals("NIL", actual)
+        })
     }
 
     @Test
     fun normalIf() {
-        run {
-            val compiler = Compiler()
-            compiler.process("(print (if (= (+ 35 7) (* 6 7)) (- 50 8) 0))".byteInputStream())
-        }
+        run("(print (if (= (+ 35 7) (* 6 7)) (- 50 8) 0))", { actual ->
+            assertEquals("42", actual)
+        })
     }
 
    @Test
     fun simpleDefun() {
-       val compiler = Compiler()
-        compiler.process((
-                "(defun x (a b) (* a b))" +
-                "(print (x 6 7))").byteInputStream())
+       run("(defun x (a b) (* a b)) (print (x 6 7))", { actual ->
+           assertEquals("42", actual)
+       })
     }
 
     @Test
     fun fib() {
-        val compiler = Compiler()
-        compiler.process(("(defun fib (n) (if (= n 0) 1 (" +
+        run("(defun fib (n) (if (= n 0) 1 (" +
                 "  if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))))))" +
-                "(print (fib 10))").byteInputStream())
+                "(print (fib 10))",
+                { actual ->
+                    assertEquals("89", actual)
+                }
+        )
     }
 }
 

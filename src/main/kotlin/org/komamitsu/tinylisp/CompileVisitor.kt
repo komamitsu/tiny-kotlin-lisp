@@ -15,14 +15,25 @@ import java.util.jar.JarOutputStream
 import java.util.jar.Manifest
 
 
-class CompileVisitor : Visitor<Unit> {
-    val dependentClasses = listOf(
-            Node::class,
-            IntegerNode::class,
-            BoolNode::class,
-            TrueNode::class,
-            NilNode::class,
-            CellNode::class)
+class CompileVisitor(val outputJarPath: Path) : Visitor<Unit> {
+    val classDir = "org/komamitsu/tinylisp"
+    val classDependencies = mapOf(
+            Pair(classDir,
+                    listOf( Node::class,
+                            IntegerNode::class,
+                            BoolNode::class,
+                            TrueNode::class,
+                            NilNode::class,
+                            CellNode::class)
+            ),
+            Pair("kotlin",
+                    listOf( kotlin.KotlinNullPointerException::class,
+                            kotlin.UninitializedPropertyAccessException::class)
+            ),
+            Pair("kotlin/jvm/internal",
+                    listOf(kotlin.jvm.internal.Intrinsics::class)
+            )
+    )
 
     val varSeq = AtomicLong()
     var rootVarName: String? = null
@@ -381,11 +392,7 @@ class CompileVisitor : Visitor<Unit> {
     fun dumpCode() : String {
         val buf = StringBuilder()
         buf.append("package org.komamitsu.tinylisp;\n")
-        for (dependentClass in dependentClasses) {
-//            buf.append("import org.komamitsu.tinylisp.${dependentClass.simpleName};\n")
-            buf.append("import ${dependentClass.qualifiedName};\n")
-        }
-        buf.append("")
+        buf.append("\n")
         buf.append("public class Runner {\n")
 
         functions.forEach({ s -> buf.append(s) })
@@ -419,21 +426,28 @@ class CompileVisitor : Visitor<Unit> {
         val classesField = loader.javaClass.getDeclaredField("classes")
         classesField.isAccessible = true
         val classes = classesField.get(loader) as Map<String, ByteArray>
-        val byteCode = classes.get("org.komamitsu.tinylisp.Runner") ?: throw RuntimeException("Failed to get bytecodes")
+        val byteCode = classes.get("org.komamitsu.tinylisp.Runner") ?: throw RuntimeException("Failed to get bytecode")
 
         return byteCode
     }
 
     fun createClassFileFromByteCode(byteCode: ByteArray, workDir: Path) {
-        val dir = Paths.get(workDir.toString(), "org/komamitsu/tinylisp")
-        Files.createDirectories(dir)
-        for (dependentClass in dependentClasses) {
-            val url = dependentClass.java.getResource("${dependentClass.simpleName}.class")
-            Files.copy(Paths.get(url.path),
-                    Paths.get(dir.toString(), "${dependentClass.simpleName}.class"))
+        for (dirAndClasses in classDependencies.entries) {
+            val dir = workDir.resolve(dirAndClasses.key)
+            Files.createDirectories(dir)
+
+            dirAndClasses.value.stream()
+                    .forEach { clazz ->
+                        val simpleClassName = "${clazz.simpleName}.class"
+                        val kotlinClassPath = dir.resolve(simpleClassName)
+                        clazz.java.getResourceAsStream(simpleClassName).use {
+                            Files.copy(it, kotlinClassPath)
+                        }
+                    }
         }
 
-        val classFile = File(dir.toFile(), "Runner.class")
+
+        val classFile = workDir.resolve(classDir).resolve("Runner.class").toFile()
         classFile.writeBytes(byteCode)
     }
 
@@ -444,7 +458,7 @@ class CompileVisitor : Visitor<Unit> {
         global.put(Attributes.Name.MANIFEST_VERSION, version)
         global.put(Attributes.Name.MAIN_CLASS, "org.komamitsu.tinylisp.Runner")
 
-        val jarFile = File("CompiledLisp.jar")
+        val jarFile = outputJarPath.toFile()
         val os = FileOutputStream(jarFile)
         JarOutputStream(os, manifest).use {
             Files.walk(workDir, Int.MAX_VALUE, FileVisitOption.FOLLOW_LINKS)

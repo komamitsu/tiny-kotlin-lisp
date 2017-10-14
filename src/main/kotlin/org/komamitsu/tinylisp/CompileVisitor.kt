@@ -3,12 +3,27 @@ package org.komamitsu.tinylisp
 import org.codehaus.commons.compiler.CompilerFactoryFactory
 import org.codehaus.janino.ByteArrayClassLoader
 import java.io.File
+import java.io.FileOutputStream
+import java.nio.file.FileVisitOption
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicLong
+import java.util.jar.Attributes
+import java.util.jar.JarEntry
+import java.util.jar.JarOutputStream
+import java.util.jar.Manifest
+
 
 class CompileVisitor : Visitor<Unit> {
-    val dependentClasses = listOf(Node::class, IntegerNode::class, BoolNode::class, TrueNode::class, CellNode::class)
+    val dependentClasses = listOf(
+            Node::class,
+            IntegerNode::class,
+            BoolNode::class,
+            TrueNode::class,
+            NilNode::class,
+            CellNode::class)
+
     val varSeq = AtomicLong()
     var rootVarName: String? = null
     var functions = mutableListOf<String>()
@@ -367,7 +382,8 @@ class CompileVisitor : Visitor<Unit> {
         val buf = StringBuilder()
         buf.append("package org.komamitsu.tinylisp;\n")
         for (dependentClass in dependentClasses) {
-            buf.append("import org.komamitsu.tinylisp.${dependentClass.simpleName};\n")
+//            buf.append("import org.komamitsu.tinylisp.${dependentClass.simpleName};\n")
+            buf.append("import ${dependentClass.qualifiedName};\n")
         }
         buf.append("")
         buf.append("public class Runner {\n")
@@ -393,9 +409,9 @@ class CompileVisitor : Visitor<Unit> {
         return buf.toString()
     }
 
-    fun compile() {
+    private fun getByteCode(srcCode: String) : ByteArray {
         val compiler = CompilerFactoryFactory.getDefaultCompilerFactory().newSimpleCompiler()
-        compiler.cook(dumpCode())
+        compiler.cook(srcCode)
 
         val resultField = compiler.javaClass.getDeclaredField("result")
         resultField.isAccessible = true
@@ -403,19 +419,53 @@ class CompileVisitor : Visitor<Unit> {
         val classesField = loader.javaClass.getDeclaredField("classes")
         classesField.isAccessible = true
         val classes = classesField.get(loader) as Map<String, ByteArray>
-        val byteCodes = classes.get("org.komamitsu.tinylisp.Runner") ?: throw RuntimeException("Failed to get bytecodes")
+        val byteCode = classes.get("org.komamitsu.tinylisp.Runner") ?: throw RuntimeException("Failed to get bytecodes")
 
+        return byteCode
+    }
+
+    fun createClassFileFromByteCode(byteCode: ByteArray, workDir: Path) {
+        val dir = Paths.get(workDir.toString(), "org/komamitsu/tinylisp")
+        Files.createDirectories(dir)
+        for (dependentClass in dependentClasses) {
+            val url = dependentClass.java.getResource("${dependentClass.simpleName}.class")
+            Files.copy(Paths.get(url.path),
+                    Paths.get(dir.toString(), "${dependentClass.simpleName}.class"))
+        }
+
+        val classFile = File(dir.toFile(), "Runner.class")
+        classFile.writeBytes(byteCode)
+    }
+
+    private fun createJar(workDir: Path) : File {
+        val version = "1.0.0"
+        val manifest = Manifest()
+        val global = manifest.getMainAttributes()
+        global.put(Attributes.Name.MANIFEST_VERSION, version)
+        global.put(Attributes.Name.MAIN_CLASS, "org.komamitsu.tinylisp.Runner")
+
+        val jarFile = File("CompiledLisp.jar")
+        val os = FileOutputStream(jarFile)
+        JarOutputStream(os, manifest).use {
+            Files.walk(workDir, Int.MAX_VALUE, FileVisitOption.FOLLOW_LINKS)
+                    .forEach({ path ->
+                        if (path.toFile().isFile && path.toString().endsWith(".class")) {
+                            val relativePath = JarEntry(workDir.relativize(path).toString())
+                            it.putNextEntry(relativePath)
+                            it.write(path.toFile().readBytes())
+                        }
+                    })
+        }
+
+        return jarFile
+    }
+
+    fun compile() {
+        val byteCode = getByteCode(dumpCode())
         val tempDir = createTempDir(prefix = "tinyKotlinLisp")
         try {
-            val dir = Paths.get("${tempDir.absolutePath}/org/komamitsu/tinylisp")
-            Files.createDirectories(dir)
-            for (dependentClass in dependentClasses) {
-                val url = dependentClass.java.getResource("${dependentClass.simpleName}.class")
-                Files.copy(Paths.get(url.path),
-                        Paths.get(dir.toString(), "${dependentClass.simpleName}.class"))
-            }
-
-            File(dir.toFile(), "Runner.class").writeBytes(byteCodes)
+            createClassFileFromByteCode(byteCode, tempDir.toPath())
+            createJar(tempDir.toPath())
         }
         finally {
             tempDir.deleteRecursively()

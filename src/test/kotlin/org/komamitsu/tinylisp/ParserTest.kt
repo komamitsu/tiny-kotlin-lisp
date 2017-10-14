@@ -7,8 +7,8 @@ class ParserTest {
     @Test
     fun parse() {
         assertEquals(
-                Cell(Symbol("-"), Cell(Integer(50), Cell(
-                        Cell(Symbol("+"), Cell(Integer(5), Cell(Integer(3), Nil))), Nil))),
+                CellNode(SymbolNode("-"), CellNode(IntegerNode(50), CellNode(
+                        CellNode(SymbolNode("+"), CellNode(IntegerNode(5), CellNode(IntegerNode(3), NilNode))), NilNode))),
                 Parser("(- 50 (+ 5 3))".byteInputStream()).parse())
     }
 }

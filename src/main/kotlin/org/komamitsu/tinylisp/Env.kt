@@ -9,20 +9,15 @@ open class Env(var parent: Env?) {
         table.put(key, value)
     }
 
-    fun mergeAsParent(other: Env) : Env {
-        parent = other
-        return this
-    }
-
-    fun search(symbol: Symbol): Node? {
+    fun search(symbolNode: SymbolNode): Node? {
         var current: org.komamitsu.tinylisp.Env? = this
         while (true) {
             if (current == null) {
                 return null
             }
-            val value = current.table[symbol.key]
+            val value = current.table[symbolNode.key]
             if (value != null) {
-                if (value is Symbol) {
+                if (value is SymbolNode) {
                     return search(value)
                 }
                 return value

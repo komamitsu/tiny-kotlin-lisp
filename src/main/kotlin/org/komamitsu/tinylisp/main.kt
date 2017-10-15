@@ -2,6 +2,7 @@ package org.komamitsu.tinylisp
 
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
+import com.xenomachina.argparser.mainBody
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -80,22 +81,22 @@ class Compile: Mode() {
 class Args(parser: ArgParser) {
     val inputFile by parser.storing(
             "-i", "--input-file",
-            help = "Input source code file path. Without this option, it works as REPL").default(null)
+            help = "input source code file path. Without this option, it works as REPL").default(null)
 
     val outputFile by parser.storing(
             "-o", "--output-file",
-            help = "Output Jar file path. This option is available only with 'compile' mode").default(null)
+            help = "output Jar file path. This option is available only with 'compile' mode").default(null)
 
     val generatedSourceFile by parser.storing(
             "-s", "--source-file-generated",
-            help = "Generated source file path. This option is for debugging and available only with 'compile' mode").default(null)
+            help = "generated source file path. This option is for debugging and available only with 'compile' mode").default(null)
 
     val verbose by parser.flagging(
             "-v", "--verbose",
-            help = "Verbose mode. This option is available only in REPL")
+            help = "verbose mode. This option is available only in REPL")
 
     val mode by parser.positional("MODE",
-            help = "mode: 'interpret' or 'compile'") {
+            help = "'interpret' or 'compile'") {
         when (this) {
             "interpret" -> Interpret()
             "compile" -> Compile()
@@ -104,8 +105,9 @@ class Args(parser: ArgParser) {
     }
 }
 
-fun main(args : Array<String>) {
-    val arguments = Args(ArgParser(args));
+fun main(args : Array<String>) = mainBody {
+    val arguments = Args(ArgParser(args))
+
     if (arguments.inputFile != null) {
         val generatedSourceFilePath = if (arguments.generatedSourceFile != null) {
             Paths.get(arguments.generatedSourceFile)

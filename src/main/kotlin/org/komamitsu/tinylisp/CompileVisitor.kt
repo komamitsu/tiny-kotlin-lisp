@@ -7,7 +7,6 @@ import java.io.FileOutputStream
 import java.nio.file.FileVisitOption
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicLong
 import java.util.jar.Attributes
 import java.util.jar.JarEntry
@@ -212,6 +211,17 @@ class CompileVisitor(val outputJarPath: Path) : Visitor<Unit> {
         sourceCode().append("// $comment\n")
     }
 
+    private fun createSimpleCondition(vars: List<String>, condOp: String) : String {
+        val cond = vars.foldIndexed<String, List<String>>(listOf(), { index, acc, node ->
+            if (index < vars.size - 1) {
+                acc.plus(String.format("(%s.asIntegerNode().getValue() $condOp %s.asIntegerNode().getValue())", node, vars[index + 1]))
+            } else {
+                acc
+            }
+        }).joinToString(separator = " && ")
+        return cond
+    }
+
     override fun visitCellNode(cell: CellNode): Unit {
         if (cell.quoted) {
             return representQuotedCellNode(cell)
@@ -248,22 +258,9 @@ class CompileVisitor(val outputJarPath: Path) : Visitor<Unit> {
 
             "=" -> {
                 val vars = declareVars(params)
-                val cond = vars.fold(
-                        Pair<String?, List<Pair<String, String>>>(null, listOf()),
-                        { acc, varname ->
-                            val lastVarname = acc.first
-                            val pairs = acc.second
-                            if (lastVarname == null) {
-                                Pair(varname, pairs)
-                            }
-                            else {
-                                Pair(varname, pairs.plus(Pair(lastVarname, varname)))
-                            }
-                        }).second
-                        .map({pair -> String.format("(%s.asIntegerNode().getValue() == %s.asIntegerNode().getValue())", pair.first, pair.second)})
-                        .joinToString(separator = " && ")
-
+                val cond = createSimpleCondition(vars, "==")
                 evalCondAndReturn(cond)
+
             }
 
             "/=" -> {
@@ -274,24 +271,31 @@ class CompileVisitor(val outputJarPath: Path) : Visitor<Unit> {
                         acc1.plus(x)
                     }))
                 }).joinToString(separator = " && ")
-
                 evalCondAndReturn(cond)
             }
 
             "<=" -> {
-                TODO()
+                val vars = declareVars(params)
+                val cond = createSimpleCondition(vars, "<=")
+                evalCondAndReturn(cond)
             }
 
             ">=" -> {
-                TODO()
+                val vars = declareVars(params)
+                val cond = createSimpleCondition(vars, ">=")
+                evalCondAndReturn(cond)
             }
 
             "<" -> {
-                TODO()
+                val vars = declareVars(params)
+                val cond = createSimpleCondition(vars, "<")
+                evalCondAndReturn(cond)
             }
 
             ">" -> {
-                TODO()
+                val vars = declareVars(params)
+                val cond = createSimpleCondition(vars, ">")
+                evalCondAndReturn(cond)
             }
 
             "+" -> {

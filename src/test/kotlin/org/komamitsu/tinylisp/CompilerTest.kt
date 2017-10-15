@@ -107,6 +107,170 @@ class CompilerTest {
     }
 
     @Test
+    fun smallerThanOrEquals() {
+        run("(print (<= 1 1))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (<= 1 2))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (<= 2 1))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (<= 1 1 2))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (<= 1 2 2))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (<= 2 2 1))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (<= 2 1 2))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (<= 1 1 1))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (<= (+ 35 6) (* 6 7)))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (<= (+ 35 7) (* 6 7)))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (<= (+ 35 8) (* 6 7)))", { actual ->
+            assertEquals("NIL", actual)
+        })
+    }
+
+    @Test
+    fun smallerThan() {
+        run("(print (< 1 1))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (< 1 2))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (< 1 1 2))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (< 1 2 2))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (< 1 1 1))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (< 1 2 3))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (< (+ 35 6) (* 6 7)))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (< (+ 35 7) (* 6 7)))", { actual ->
+            assertEquals("NIL", actual)
+        })
+    }
+
+    @Test
+    fun greaterThanOrEquals() {
+        run("(print (>= 1 1))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (>= 1 2))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (>= 2 1))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (>= 2 2 1))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (>= 2 1 1))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (>= 2 1 2))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (>= 1 2 1))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (>= 1 1 1))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (>= (+ 35 8) (* 6 7)))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (>= (+ 35 7) (* 6 7)))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (>= (+ 35 6) (* 6 7)))", { actual ->
+            assertEquals("NIL", actual)
+        })
+    }
+
+    @Test
+    fun greaterThan() {
+        run("(print (> 1 1))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (> 2 1))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (> 2 2 1))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (> 2 1 1))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (> 1 1 1))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (> 3 2 1))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (> (+ 35 8) (* 6 7)))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (> (+ 35 7) (* 6 7)))", { actual ->
+            assertEquals("NIL", actual)
+        })
+    }
+
+    @Test
     fun simpleIf() {
         run("(print (if (= 1 1) 42 0))", { actual ->
             assertEquals("42", actual)
@@ -144,6 +308,14 @@ class CompilerTest {
                     assertEquals("89", actual)
                 }
         )
+    }
+
+    @Test
+    fun fib2() {
+        run("(defun fib (n x1 x2) (if (<= n 0) x1 (fib (- n 1) x2 (+ x1 x2))))" +
+                "(print (fib 10 1 1))", { actual ->
+            assertEquals("89", actual)
+        })
     }
 }
 

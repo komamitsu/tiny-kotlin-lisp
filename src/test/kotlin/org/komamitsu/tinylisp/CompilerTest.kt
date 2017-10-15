@@ -66,8 +66,43 @@ class CompilerTest {
             assertEquals("NIL", actual)
         })
 
+        run("(print (= 1 1 2))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (= 1 2 2))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (= 1 1 1))", { actual ->
+            assertEquals("T", actual)
+        })
+
         run("(print (= (+ 35 7) (* 6 7)))", { actual ->
             assertEquals("T", actual)
+        })
+    }
+
+    @Test
+    fun notEquals() {
+        run("(print (/= 1 1))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (/= 1 2))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (/= 1 2 3))", { actual ->
+            assertEquals("T", actual)
+        })
+
+        run("(print (/= 1 2 1))", { actual ->
+            assertEquals("NIL", actual)
+        })
+
+        run("(print (/= (+ 35 7) (* 6 7)))", { actual ->
+            assertEquals("NIL", actual)
         })
     }
 

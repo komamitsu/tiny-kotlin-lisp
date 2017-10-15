@@ -248,7 +248,7 @@ class CompileVisitor(val outputJarPath: Path) : Visitor<Unit> {
 
             "=" -> {
                 val vars = declareVars(params)
-                val equals = vars.fold(
+                val cond = vars.fold(
                         Pair<String?, List<Pair<String, String>>>(null, listOf()),
                         { acc, varname ->
                             val lastVarname = acc.first
@@ -263,11 +263,19 @@ class CompileVisitor(val outputJarPath: Path) : Visitor<Unit> {
                         .map({pair -> String.format("(%s.asIntegerNode().getValue() == %s.asIntegerNode().getValue())", pair.first, pair.second)})
                         .joinToString(separator = " && ")
 
-                evalCondAndReturn(equals)
+                evalCondAndReturn(cond)
             }
 
             "/=" -> {
-                TODO()
+                val vars = declareVars(params)
+                val cond = vars.foldIndexed<String, List<String>>(listOf(), { index, acc0, node0 ->
+                    acc0.plus(vars.subList(index + 1, vars.size).fold<String, List<String>>(listOf(), { acc1, node1 ->
+                        val x = String.format("(%s.asIntegerNode().getValue() != %s.asIntegerNode().getValue())", node0, node1)
+                        acc1.plus(x)
+                    }))
+                }).joinToString(separator = " && ")
+
+                evalCondAndReturn(cond)
             }
 
             "<=" -> {

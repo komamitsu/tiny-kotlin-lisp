@@ -167,6 +167,12 @@ class InterpretVisitor(var env: Env) : Visitor<Node> {
                 funcName
             }
 
+            "print" -> {
+                System.out.println(params.getCarOfNilTerminatedCellNode().accept(this))
+
+                NilNode
+            }
+
             else -> {
                 val newEnv = Env(null)
 

@@ -40,14 +40,14 @@ You can use this mode by specifying `compile`.
 #### Compile and execute a Jar file
 
 ```
-$ java -jar build/libs/tiny-kotlin-lisp-1.0-SNAPSHOT.jar -i ~/tmp/fib_37.lisp compile
+$ java -jar build/libs/tiny-kotlin-lisp.jar -i ~/tmp/fib_37.lisp compile
 39088169
 ```
 
 If you want to check a generated Java source code, specify `-s` option.
 
 ```
-$ java -jar build/libs/tiny-kotlin-lisp-1.0-SNAPSHOT.jar -i ~/tmp/fib_37.lisp -s GeneratedJavaCode.java compile
+$ java -jar build/libs/tiny-kotlin-lisp.jar -i ~/tmp/fib_37.lisp -s GeneratedJavaCode.java compile
 39088169
 
 $ head -20 GeneratedJavaCode.java
@@ -78,7 +78,7 @@ Node var4 = null;
 You can get a built Jar file w/o executing it by specifying `-o` option. With this option, `-s` option above is also available.
 
 ```
-$ java -jar build/libs/tiny-kotlin-lisp-1.0-SNAPSHOT.jar -i ~/tmp/fib_37.lisp -o CompiledLisp.jar compile
+$ java -jar build/libs/tiny-kotlin-lisp.jar -i ~/tmp/fib_37.lisp -o CompiledLisp.jar compile
 $ java -jar CompiledLisp.jar
 39088169
 ```
@@ -93,7 +93,7 @@ You can use this mode by specifying `interpret`.
 #### REPL
 
 ```
-$ java -jar build/libs/tiny-kotlin-lisp-1.0-SNAPSHOT.jar interpret
+$ java -jar build/libs/tiny-kotlin-lisp.jar interpret
 ```
 
 ```
@@ -106,7 +106,7 @@ $ java -jar build/libs/tiny-kotlin-lisp-1.0-SNAPSHOT.jar interpret
 #### Evaluate a specified Lisp code
 
 ```
-$ java -jar build/libs/tiny-kotlin-lisp-1.0-SNAPSHOT.jar -i ~/tmp/fib_37.lisp interpret
+$ java -jar build/libs/tiny-kotlin-lisp.jar -i ~/tmp/fib_37.lisp interpret
 39088169
 ```
 

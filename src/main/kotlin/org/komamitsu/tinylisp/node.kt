@@ -134,101 +134,34 @@ data class CellNode(val car: Node, var cdr: Node) : Node() {
     }
 
     override fun toString(): String {
-        return "($car, $cdr)"
-    }
-}
+        val buf = StringBuilder()
+        buf.append("(")
+        var cell = this
+        while (true) {
+            buf.append(cell.car)
+            val cdr = cell.cdr
+            if (cdr is NilNode) {
+                break
+            }
+            else if (cdr is CellNode) {
+                buf.append(" ")
+                cell = cdr
+            }
+            else {
+                buf.append(" . ${cell.cdr}")
+                break
+            }
+        }
+        buf.append(")")
 
-/*
-data class CarNode(val cellNode: CellNode) : Node() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        return visitor.visitCarNode(env, this)
-    }
-}
+        return buf.toString()
 
-data class CdrOpNode(val cellNode: CellNode) : OpNode() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        val node = cellNode.cdr
-        return when (node) {
-            is IntegerNode -> visitor.visitIntegerNode(env, node)
-            is SymbolNode -> visitor.visitSymbolNode(env, node)
-            is CellNode -> visitor.visitCellNode(env, node)
-            is BoolNode -> visitor.visitBoolNode(env, node)
-            else -> throw IllegalStateException("Unexpected node at CdrNode: $node")
+        if (cdr is CellNode) {
+            return "($car $cdr)"
+        }
+        else {
+            return "($car, $cdr)"
         }
     }
 }
 
-data class ConsOpNode(val cellNode: CellNode) : OpNode() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        val first = cellNode.car
-        val second = cellNode.cdr.asNilTerminatedCellNode() ?: throw IllegalStateException("Unexpected node at CdrNode: ${cellNode.cdr}")
-        return visitor.visitCellNode(env, CellNode(first, second))
-    }
-}
-
-data class EqualNode(val cellNode: CellNode) : OpNode() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        return visitor.visitEqualNode(env, this)
-    }
-}
-
-data class NotEqualNode(val cellNode: CellNode) : OpNode() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        return visitor.visitNotEqualNode(env, this)
-    }
-}
-
-data class GreaterThanNode(val cellNode: CellNode) : OpNode() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        return visitor.visitGreaterThanNode(env, this)
-    }
-}
-
-data class GreaterThanOrEqualNode(val cellNode: CellNode) : OpNode() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        return visitor.visitGreaterThanOrEqualNode(env, this)
-    }
-}
-
-data class LessThanNode(val cellNode: CellNode) : OpNode() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        return visitor.visitLessThanNode(env, this)
-    }
-}
-
-data class LessThanOrEqualNode(val cellNode: CellNode) : OpNode() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        return visitor.visitLessThanOrEqualNode(env, this)
-    }
-}
-
-data class AddNode(val cellNode: CellNode) : OpNode() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        return visitor.visitAddNode(env, this)
-    }
-}
-
-data class SubtractNode(val cellNode: CellNode) : OpNode() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        return visitor.visitSubtractNode(env, this)
-    }
-}
-
-data class DivideNode(val cellNode: CellNode) : OpNode() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        return visitor.visitDivideNode(env, this)
-    }
-}
-
-data class MultiplyNode(val cellNode: CellNode) : OpNode() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        return visitor.visitMultiplyNode(env, this)
-    }
-}
-
-data class IfNode(val cellNode: CellNode) : OpNode() {
-    override fun <T> accept(env: Env, visitor: Visitor<T>): T {
-        return visitor.visitIfNode(env, this)
-    }
-}
-*/

@@ -41,18 +41,18 @@ class CompilerTest {
     @Test
     fun cdr() {
         run("(print (cdr '(42 0)))", { actual ->
-            assertEquals("(0, NIL)", actual)
+            assertEquals("(0)", actual)
         })
     }
 
     @Test
     fun cons() {
         run("(print (cons 1 2))", { actual ->
-            assertEquals("(1, 2)", actual)
+            assertEquals("(1 . 2)", actual)
         })
 
         run("(print (cons '(1 2) '(3 4)))", { actual ->
-            assertEquals("((1, (2, NIL)), (3, (4, NIL)))", actual)
+            assertEquals("((1 2) 3 4)", actual)
         })
     }
 
